@@ -94,8 +94,6 @@ public class DriveSubsystem extends SubsystemBase {
         m_rightFollower.configure(m_rightFollowerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
         // Built-in encoders
-        //m_leftEncoder = m_leftLeader.getEncoder();
-        //m_rightEncoder = m_rightLeader.getEncoder();
         m_rightEncoder = new CANcoder(kRightEncoderID);
         
 
@@ -103,9 +101,12 @@ public class DriveSubsystem extends SubsystemBase {
         resetEncoders();
         m_pigeon2.reset();
         m_lastHeading = m_pigeon2.getRotation2d();
+    
+        // initialize odometry with desired starting location (0,0) is bottom-left corner of field.
         m_odometry = new DifferentialDriveOdometry(
-            m_pigeon2.getRotation2d(), 
-            m_virtualLeftDistanceMeters, getRightDistanceMeters()); // should be 0.0, 0,0
+            m_pigeon2.getRotation2d(),
+            m_virtualLeftDistanceMeters, getRightDistanceMeters(),
+            new Pose2d(1.616, 4.035, Rotation2d.kZero)); // 4th arg
 
         // initialize differential drive object
         m_differentialDrive = new DifferentialDrive(m_leftLeader, m_rightLeader);
@@ -302,7 +303,7 @@ public class DriveSubsystem extends SubsystemBase {
         // estimate angular velocity
         m_angularVelocityRadPerSecEst = deltaHeadingRadians / kRobotLoopPeriod;
 
-        // update virtual left distance; note the +=
+        // update virtual left distance; note the +=g
         m_virtualLeftDistanceMeters += deltaRight - kDriveTrackWidthMeters * deltaHeadingRadians;
 
         m_lastRightDistanceMeters = currentRight;
