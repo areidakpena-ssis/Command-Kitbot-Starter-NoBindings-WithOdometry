@@ -48,6 +48,36 @@ robot — safe to ignore for this lesson.
 Each mechanism above has its own subsystem file — that's where you'll find out what it
 can actually do.
 
+## Odometry
+
+`DriveSubsystem` also keeps track of where the robot is on the field — its
+**odometry** — updating an estimated pose every scheduler cycle in `periodic()`.
+
+Two real sensors feed it:
+
+| Sensor | CAN ID | What it provides |
+|---|---|---|
+| CANcoder (right side) | see `kRightEncoderID` in `Constants.DriveConstants` | Real right-side distance and velocity |
+| Pigeon2 (gyro) | `5` | Heading (yaw) |
+
+**There's no physical left-side encoder on this robot** — only the right side has one.
+So `DriveSubsystem` reconstructs a *virtual* left-side distance in software every loop,
+using the differential-drive kinematic identity:
+
+```
+Δleft = Δright − trackWidth × Δheading
+```
+
+Each cycle, `periodic()` takes how far the real right encoder moved and how much the
+Pigeon2's heading changed since the last cycle, and uses that identity to update a
+running total for the virtual left distance — a value that keeps accumulating
+continuously across mode switches, the same way a real encoder's reading would.
+
+That real right distance, the virtual left distance, and the real gyro heading all feed
+into a `DifferentialDriveOdometry` object, which produces the robot's estimated field
+pose (`getPose()`). A `Field2d` object publishes that pose to SmartDashboard, so you can
+watch the robot's estimated position update live while it drives.
+
 ## What you'll do
 
 Right now, pressing buttons on the controller does nothing except drive the robot
